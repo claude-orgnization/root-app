@@ -1,29 +1,22 @@
-name: Claude Issue to PR
+name: Claude Assistant
 
 on:
-  issues:
-    types: [assigned]        # Issueをアサインしたとき
   issue_comment:
-    types: [created]         # コメントで @claude を呼んだとき
+    types: [created]
+  issues:
+    types: [opened, assigned]
 
 permissions:
   contents: write
   pull-requests: write
-  issues: read
+  issues: write
+  id-token: write
 
 jobs:
   claude:
     runs-on: ubuntu-latest
+    if: contains(github.event.comment.body, '@claude')
     steps:
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-```
-
----
-
-### 3. 使い方
-
-セットアップ後、Issueのコメントに以下のように書くだけ：
-```
-@claude このIssueを実装してPRを作成してください
