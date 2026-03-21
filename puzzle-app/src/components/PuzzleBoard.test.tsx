@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { PuzzleBoard } from './PuzzleBoard'
 import type { Level } from '../types/game'
 
@@ -18,11 +18,9 @@ const level: Level = {
 describe('PuzzleBoard', () => {
   const defaultProps = {
     level,
-    selectedPieceId: null,
     wrongSlotId: null,
     availablePieceIds: ['piece-0', 'piece-1'],
-    selectPiece: vi.fn(),
-    placePiece: vi.fn(),
+    placePieceById: vi.fn(),
   }
 
   it('renders all slots', () => {
@@ -36,20 +34,6 @@ describe('PuzzleBoard', () => {
     expect(screen.getByRole('button', { name: 'さんかく' })).toBeInTheDocument()
   })
 
-  it('calls selectPiece when a piece is clicked', () => {
-    const selectPiece = vi.fn()
-    render(<PuzzleBoard {...defaultProps} selectPiece={selectPiece} />)
-    fireEvent.click(screen.getByRole('button', { name: 'まる' }))
-    expect(selectPiece).toHaveBeenCalledWith('piece-1')
-  })
-
-  it('calls placePiece when a slot is clicked', () => {
-    const placePiece = vi.fn()
-    render(<PuzzleBoard {...defaultProps} placePiece={placePiece} />)
-    fireEvent.click(screen.getAllByLabelText(/スロット/)[0])
-    expect(placePiece).toHaveBeenCalledWith('slot-0')
-  })
-
   it('does not render placed pieces in the piece tray', () => {
     render(<PuzzleBoard {...defaultProps} availablePieceIds={['piece-0']} />)
     expect(screen.getByRole('button', { name: 'さんかく' })).toBeInTheDocument()
@@ -58,6 +42,6 @@ describe('PuzzleBoard', () => {
 
   it('shows instruction text', () => {
     render(<PuzzleBoard {...defaultProps} />)
-    expect(screen.getByText(/えらんで|タップ|クリック/i)).toBeInTheDocument()
+    expect(screen.getByText(/ドラッグ/)).toBeInTheDocument()
   })
 })
