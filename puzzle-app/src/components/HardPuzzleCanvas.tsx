@@ -1,15 +1,26 @@
-import type { HardSlot, HardPuzzleConfig, Shape } from '../types/game'
+import type { TangramSlot, TangramPuzzleConfig, Shape } from '../types/game'
 import { ShapeSVG } from './ShapeSVG'
 import { ShapePiece } from './ShapePiece'
 import { useDragDrop } from '../hooks/useDragDrop'
+import { SHAPE_NAMES_JP } from '../constants/shapes'
 
 interface HardPuzzleCanvasProps {
-  config: HardPuzzleConfig
-  slots: HardSlot[]
+  config: TangramPuzzleConfig
+  slots: TangramSlot[]
   pieces: Shape[]
   wrongSlotId: string | null
   availablePieceIds: string[]
   placePieceById: (pieceId: string, slotId: string) => void
+}
+
+function parseCentroid(points: string): { x: number; y: number } {
+  const pts = points.split(' ').map((pt) => {
+    const [x, y] = pt.split(',').map(Number)
+    return { x, y }
+  })
+  const cx = pts.reduce((sum, p) => sum + p.x, 0) / pts.length
+  const cy = pts.reduce((sum, p) => sum + p.y, 0) / pts.length
+  return { x: cx, y: cy }
 }
 
 export function HardPuzzleCanvas({
@@ -30,7 +41,7 @@ export function HardPuzzleCanvas({
   const draggingPiece = draggingPieceId ? (pieceById.get(draggingPieceId) ?? null) : null
 
   return (
-    <main className="flex flex-col items-center gap-6 p-6 select-none">
+    <main className="flex flex-col items-center gap-6 p-4 select-none">
       <div className="text-center">
         <h2 className="text-xl font-bold text-orange-700">{config.title}</h2>
         <p className="text-sm text-gray-500 mt-1">{config.subtitle}</p>
@@ -40,56 +51,74 @@ export function HardPuzzleCanvas({
         {draggingPieceId ? 'おきたいばしょにはなしてね！' : 'かたちをドラッグしてね！'}
       </p>
 
-      {/* Puzzle canvas */}
+      {/* SVG Tangram Canvas */}
       <section aria-label="パズルキャンバス" className="overflow-x-auto">
-        <div
-          className="relative bg-amber-50 rounded-3xl border-2 border-dashed border-amber-200 mx-auto"
-          style={{ width: config.canvasWidth, height: config.canvasHeight }}
+        <svg
+          width={config.canvasWidth}
+          height={config.canvasHeight}
+          viewBox={`0 0 ${config.canvasWidth} ${config.canvasHeight}`}
+          className="rounded-3xl border-2 border-amber-200 bg-amber-50"
         >
+          {/* Combined silhouette outline */}
+          <path
+            d={config.outlinePath}
+            fill="none"
+            stroke="#FCD34D"
+            strokeWidth="3"
+            strokeDasharray="8,5"
+            pointerEvents="none"
+          />
+
+          {/* Slot polygons — filled with piece color or light gray */}
           {slots.map((slot) => {
             const filledPiece = slot.filledBy ? (pieceById.get(slot.filledBy) ?? null) : null
             const isFilled = slot.filledBy !== null
             const isWrong = wrongSlotId === slot.id
             const isDragOver = dragOverSlotId === slot.id
-            const shapeSize = Math.min(Math.min(slot.width, slot.height) * 0.7, 100)
+
+            let fillColor = '#E5E7EB' // gray-200 (empty)
+            if (isFilled && filledPiece) fillColor = filledPiece.color
+            else if (isWrong) fillColor = '#FCA5A5' // red-300
+            else if (isDragOver) fillColor = '#C4B5FD' // purple-300
 
             return (
-              <div
+              <polygon
                 key={slot.id}
-                className="absolute"
-                style={{ left: slot.x, top: slot.y, width: slot.width, height: slot.height }}
+                points={slot.points}
+                fill={fillColor}
+                stroke={isFilled ? '#ffffff' : '#D1D5DB'}
+                strokeWidth={isFilled ? '1' : '1.5'}
                 data-slot-id={isFilled ? undefined : slot.id}
-              >
-                <div
-                  className={[
-                    'w-full h-full rounded-xl border-2 flex items-center justify-center transition-all',
-                    isWrong ? 'animate-bounce' : '',
-                    isFilled
-                      ? 'border-green-400 bg-green-50'
-                      : isWrong
-                        ? 'border-red-400 bg-red-50'
-                        : isDragOver
-                          ? 'border-purple-400 bg-purple-50 scale-105 shadow-lg'
-                          : 'border-dashed border-amber-300 bg-white bg-opacity-70',
-                  ].join(' ')}
-                  aria-label={`スロット ${slot.id}`}
-                >
-                  {filledPiece ? (
-                    <ShapeSVG type={filledPiece.type} color={filledPiece.color} size={shapeSize} />
-                  ) : (
-                    <ShapeSVG type={slot.targetType} color="#D1D5DB" size={shapeSize} />
-                  )}
-                </div>
-              </div>
+                style={{ cursor: isFilled ? 'default' : 'pointer', transition: 'fill 0.15s' }}
+              />
             )
           })}
-        </div>
+
+          {/* Shape name hints inside empty slots */}
+          {slots.map((slot) => {
+            if (slot.filledBy !== null) return null
+            const { x: cx, y: cy } = parseCentroid(slot.points)
+            return (
+              <text
+                key={`label-${slot.id}`}
+                x={cx}
+                y={cy}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fontSize="13"
+                fill="#9CA3AF"
+                pointerEvents="none"
+                style={{ userSelect: 'none' }}
+              >
+                {SHAPE_NAMES_JP[slot.targetType]}
+              </text>
+            )
+          })}
+        </svg>
       </section>
 
-      {/* Instruction: all pieces must be used */}
-      <p className="text-sm text-orange-600 font-medium">
-        ⚠️ ピースをぜんぶつかってね！
-      </p>
+      {/* Instruction */}
+      <p className="text-sm text-orange-600 font-medium">⚠️ ピースをぜんぶつかってね！</p>
 
       {/* Piece tray */}
       <section aria-label="ピーストレイ" className="w-full max-w-xl">

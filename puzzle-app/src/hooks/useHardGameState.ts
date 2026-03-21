@@ -1,13 +1,13 @@
 import { useState, useCallback, useRef } from 'react'
-import type { HardSlot, HardPuzzleConfig, Shape } from '../types/game'
+import type { TangramSlot, TangramPuzzleConfig, Shape } from '../types/game'
 import { HARD_PUZZLE_CONFIGS } from '../constants/hardPuzzles'
 import { SHAPE_COLORS } from '../constants/shapes'
 import { shuffleArray } from '../utils/gameLogic'
 
 interface HardGameHookReturn {
   puzzleIndex: number
-  config: HardPuzzleConfig
-  slots: HardSlot[]
+  config: TangramPuzzleConfig
+  slots: TangramSlot[]
   pieces: Shape[]
   score: number
   isComplete: boolean
@@ -18,11 +18,11 @@ interface HardGameHookReturn {
   restart: () => void
 }
 
-function buildSlots(config: HardPuzzleConfig): HardSlot[] {
+function buildSlots(config: TangramPuzzleConfig): TangramSlot[] {
   return config.slots.map((s) => ({ ...s, filledBy: null }))
 }
 
-function buildPieces(config: HardPuzzleConfig): Shape[] {
+function buildPieces(config: TangramPuzzleConfig): Shape[] {
   return shuffleArray(
     config.slots.map((s, i) => ({
       id: `hp${config.id}-${i}`,
@@ -34,7 +34,7 @@ function buildPieces(config: HardPuzzleConfig): Shape[] {
 
 export function useHardGameState(): HardGameHookReturn {
   const [puzzleIndex, setPuzzleIndex] = useState(0)
-  const [slots, setSlots] = useState<HardSlot[]>(() => buildSlots(HARD_PUZZLE_CONFIGS[0]))
+  const [slots, setSlots] = useState<TangramSlot[]>(() => buildSlots(HARD_PUZZLE_CONFIGS[0]))
   const [pieces, setPieces] = useState<Shape[]>(() => buildPieces(HARD_PUZZLE_CONFIGS[0]))
   const [score, setScore] = useState(0)
   const [isComplete, setIsComplete] = useState(false)
