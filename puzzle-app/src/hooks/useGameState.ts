@@ -16,6 +16,7 @@ interface GameHookReturn {
   availablePieceIds: string[]
   selectPiece: (pieceId: string) => void
   placePiece: (slotId: string) => void
+  placePieceById: (pieceId: string, slotId: string) => void
   nextLevel: () => void
   restart: () => void
 }
@@ -74,6 +75,36 @@ export function useGameState(): GameHookReturn {
     [selectedPieceId, level],
   )
 
+  const placePieceById = useCallback(
+    (pieceId: string, slotId: string) => {
+      const slot = level.slots.find((s) => s.id === slotId)
+      if (!slot || slot.filledBy !== null) return
+
+      const piece = level.pieces.find((p) => p.id === pieceId)
+      if (!piece) return
+
+      if (checkShapeMatch(piece.type, slot.targetType)) {
+        const newSlots: Slot[] = level.slots.map((s) =>
+          s.id === slotId ? { ...s, filledBy: pieceId } : s,
+        )
+        setLevel({ ...level, slots: newSlots })
+        if (isLevelComplete(newSlots)) {
+          setIsComplete(true)
+          setScore((prev) => prev + calculateScore(level.number))
+        }
+      } else {
+        if (wrongSlotTimeout.current) {
+          clearTimeout(wrongSlotTimeout.current)
+        }
+        setWrongSlotId(slotId)
+        wrongSlotTimeout.current = setTimeout(() => {
+          setWrongSlotId(null)
+        }, 600)
+      }
+    },
+    [level],
+  )
+
   const nextLevel = useCallback(() => {
     setLevel((prev) => generateLevel(prev.number + 1))
     setIsComplete(false)
@@ -98,6 +129,7 @@ export function useGameState(): GameHookReturn {
     availablePieceIds,
     selectPiece,
     placePiece,
+    placePieceById,
     nextLevel,
     restart,
   }

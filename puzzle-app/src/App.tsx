@@ -7,12 +7,10 @@ function App() {
   const {
     level,
     score,
-    selectedPieceId,
     isComplete,
     wrongSlotId,
     availablePieceIds,
-    selectPiece,
-    placePiece,
+    placePieceById,
     nextLevel,
     restart,
   } = useGameState()
@@ -30,11 +28,9 @@ function App() {
       ) : (
         <PuzzleBoard
           level={level}
-          selectedPieceId={selectedPieceId}
           wrongSlotId={wrongSlotId}
           availablePieceIds={availablePieceIds}
-          selectPiece={selectPiece}
-          placePiece={placePiece}
+          placePieceById={placePieceById}
         />
       )}
     </div>
