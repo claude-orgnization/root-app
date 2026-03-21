@@ -1,14 +1,17 @@
 import { useState } from 'react'
 import { AI_TAGS } from '../constants/tags'
 import type { SortOrder, DateRange } from '../types/qiita'
+import type { SourceFilter } from '../types/article'
 
 interface Props {
   selectedTags: string[]
   sort: SortOrder
   dateRange: DateRange
+  source: SourceFilter
   onTagsChange: (tags: string[]) => void
   onSortChange: (sort: SortOrder) => void
   onDateRangeChange: (dateRange: DateRange) => void
+  onSourceChange: (source: SourceFilter) => void
 }
 
 const DATE_RANGE_OPTIONS: { value: DateRange; label: string }[] = [
@@ -18,13 +21,21 @@ const DATE_RANGE_OPTIONS: { value: DateRange; label: string }[] = [
   { value: '3months', label: '3ヶ月以内' },
 ]
 
+const SOURCE_OPTIONS: { value: SourceFilter; label: string }[] = [
+  { value: 'all', label: 'すべて' },
+  { value: 'qiita', label: 'Qiita' },
+  { value: 'zenn', label: 'Zenn' },
+]
+
 export function FilterSidebar({
   selectedTags,
   sort,
   dateRange,
+  source,
   onTagsChange,
   onSortChange,
   onDateRangeChange,
+  onSourceChange,
 }: Props) {
   const [collapsed, setCollapsed] = useState(false)
 
@@ -51,6 +62,28 @@ export function FilterSidebar({
         </div>
 
         <div className={`flex flex-col gap-5 ${collapsed ? 'hidden md:flex' : ''}`}>
+          {/* ソースフィルター */}
+          <section>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">ソース</p>
+            <div className="flex flex-col gap-1.5">
+              {SOURCE_OPTIONS.map((opt) => (
+                <label key={opt.value} className="flex items-center gap-2 cursor-pointer group">
+                  <input
+                    type="radio"
+                    name="source"
+                    value={opt.value}
+                    checked={source === opt.value}
+                    onChange={() => onSourceChange(opt.value)}
+                    className="w-3.5 h-3.5 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span className={`text-sm ${source === opt.value ? 'text-indigo-600 dark:text-indigo-400 font-medium' : 'text-gray-600 dark:text-gray-300'} group-hover:text-indigo-500`}>
+                    {opt.label}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </section>
+
           {/* タグフィルター */}
           <section>
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">タグ</p>
@@ -110,12 +143,13 @@ export function FilterSidebar({
           </section>
 
           {/* リセット */}
-          {(selectedTags.length > 0 || dateRange !== 'all' || sort !== 'created') && (
+          {(selectedTags.length > 0 || dateRange !== 'all' || sort !== 'created' || source !== 'all') && (
             <button
               onClick={() => {
                 onTagsChange([])
                 onDateRangeChange('all')
                 onSortChange('created')
+                onSourceChange('all')
               }}
               className="text-xs text-gray-400 hover:text-red-500 dark:hover:text-red-400 text-left transition-colors"
             >

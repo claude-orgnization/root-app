@@ -5,11 +5,13 @@ import { ArticleList } from '../components/ArticleList'
 import { Pagination } from '../components/Pagination'
 import { ErrorMessage } from '../components/ErrorMessage'
 import type { SortOrder, DateRange } from '../types/qiita'
+import type { SourceFilter } from '../types/article'
 
 export function HomePage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [sort, setSort] = useState<SortOrder>('created')
   const [dateRange, setDateRange] = useState<DateRange>('all')
+  const [source, setSource] = useState<SourceFilter>('all')
   const [page, setPage] = useState(1)
   const [retryKey, setRetryKey] = useState(0)
 
@@ -17,6 +19,7 @@ export function HomePage() {
     tags: selectedTags,
     sort,
     page,
+    source,
     dateRange,
   })
 
@@ -35,6 +38,11 @@ export function HomePage() {
     setPage(1)
   }, [])
 
+  const handleSourceChange = useCallback((newSource: SourceFilter) => {
+    setSource(newSource)
+    setPage(1)
+  }, [])
+
   const handleRetry = useCallback(() => {
     setRetryKey((k) => k + 1)
   }, [])
@@ -45,9 +53,11 @@ export function HomePage() {
         selectedTags={selectedTags}
         sort={sort}
         dateRange={dateRange}
+        source={source}
         onTagsChange={handleTagsChange}
         onSortChange={handleSortChange}
         onDateRangeChange={handleDateRangeChange}
+        onSourceChange={handleSourceChange}
       />
 
       <div className="flex-1 flex flex-col gap-6 min-w-0">

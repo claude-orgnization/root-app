@@ -1,7 +1,7 @@
 # 機能仕様書
 
 ## サービス概要
-**QiitaAI Watch** — Qiita上のAI関連記事を自動収集・閲覧できるWebサイト。
+**QiitaAI Watch** — QiitaおよびZenn上のAI関連記事を自動収集・閲覧できるWebサイト。
 
 ---
 
@@ -30,6 +30,18 @@
 
 ---
 
+### データソース
+- **Qiita**: Qiita API v2 を直接使用
+- **Zenn**: Zenn公開API (`https://zenn.dev/api/articles`) を使用
+
+### ソースフィルター
+- すべて（Qiita + Zenn の記事を統合表示）
+- Qiitaのみ
+- Zennのみ
+
+---
+
+
 ### フィルタリング・ソート機能
 
 #### UIレイアウト
@@ -42,6 +54,7 @@
 - タグ別フィルター（複数選択可）
 - 対象タグ: `AI`, `機械学習`, `LLM`, `ChatGPT`, `DeepLearning`, `OpenAI`, `RAG`, `生成AI`
 - 未選択時はすべてのAI関連記事を表示
+- Zennはタグに対応するトピック名で検索
 
 #### 期間フィルター
 - 投稿日による絞り込み

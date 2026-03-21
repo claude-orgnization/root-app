@@ -1,9 +1,9 @@
-import type { QiitaArticle } from '../types/qiita'
+import type { Article } from '../types/article'
 import { ArticleCard } from './ArticleCard'
 import { SkeletonCard } from './SkeletonCard'
 
 interface Props {
-  articles: QiitaArticle[]
+  articles: Article[]
   loading: boolean
 }
 

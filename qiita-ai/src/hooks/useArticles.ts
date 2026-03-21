@@ -1,16 +1,19 @@
 import { useReducer, useEffect } from 'react'
-import type { QiitaArticle, SortOrder, DateRange } from '../types/qiita'
-import { fetchArticles } from '../utils/qiitaApi'
+import type { Article, SourceFilter } from '../types/article'
+import type { SortOrder, DateRange } from '../types/qiita'
+import { fetchQiitaArticles } from '../utils/qiitaApi'
+import { fetchZennArticles } from '../utils/zennApi'
 
 interface UseArticlesParams {
   tags: string[]
   sort: SortOrder
   page: number
+  source: SourceFilter
   dateRange: DateRange
 }
 
 interface UseArticlesResult {
-  articles: QiitaArticle[]
+  articles: Article[]
   loading: boolean
   error: string | null
   totalCount: number
@@ -20,7 +23,7 @@ type State = UseArticlesResult
 
 type Action =
   | { type: 'loading' }
-  | { type: 'success'; articles: QiitaArticle[]; totalCount: number }
+  | { type: 'success'; articles: Article[]; totalCount: number }
   | { type: 'error'; message: string }
 
 function reducer(state: State, action: Action): State {
@@ -36,7 +39,7 @@ function reducer(state: State, action: Action): State {
 
 const initialState: State = { articles: [], loading: true, error: null, totalCount: 0 }
 
-export function useArticles({ tags, sort, page, dateRange }: UseArticlesParams): UseArticlesResult {
+export function useArticles({ tags, sort, page, source, dateRange }: UseArticlesParams): UseArticlesResult {
   const [state, dispatch] = useReducer(reducer, initialState)
 
   const tagsKey = tags.join(',')
@@ -46,7 +49,43 @@ export function useArticles({ tags, sort, page, dateRange }: UseArticlesParams):
 
     dispatch({ type: 'loading' })
 
-    fetchArticles({ tags, sort, page, dateRange })
+    async function load(): Promise<{ articles: Article[]; totalCount: number }> {
+      if (source === 'qiita') {
+        return fetchQiitaArticles({ tags, sort, page, dateRange })
+      }
+
+      if (source === 'zenn') {
+        return fetchZennArticles({ tags, sort, page })
+      }
+
+      // 'all': fetch both in parallel, merge results
+      const [qiitaResult, zennResult] = await Promise.allSettled([
+        fetchQiitaArticles({ tags, sort, page, dateRange }),
+        fetchZennArticles({ tags, sort, page }),
+      ])
+
+      const qiita =
+        qiitaResult.status === 'fulfilled'
+          ? qiitaResult.value
+          : { articles: [], totalCount: 0 }
+      const zenn =
+        zennResult.status === 'fulfilled'
+          ? zennResult.value
+          : { articles: [], totalCount: 0 }
+
+      const merged = [...qiita.articles, ...zenn.articles]
+      if (sort === 'likes') {
+        merged.sort((a, b) => b.likes_count - a.likes_count)
+      } else {
+        merged.sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )
+      }
+
+      return { articles: merged, totalCount: qiita.totalCount }
+    }
+
+    load()
       .then(({ articles, totalCount }) => {
         if (!cancelled) dispatch({ type: 'success', articles, totalCount })
       })
@@ -57,8 +96,8 @@ export function useArticles({ tags, sort, page, dateRange }: UseArticlesParams):
     return () => {
       cancelled = true
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tagsKey, sort, page, dateRange])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tagsKey, sort, page, source, dateRange])
 
   return state
 }
