@@ -5,7 +5,7 @@ import { LevelComplete } from './LevelComplete'
 describe('LevelComplete', () => {
   it('shows congratulations message', () => {
     render(<LevelComplete score={10} level={1} onNextLevel={() => {}} onRestart={() => {}} />)
-    expect(screen.getByText(/クリア|すごい|やったね/i)).toBeInTheDocument()
+    expect(screen.getByText(/やったね！クリア！/)).toBeInTheDocument()
   })
 
   it('displays the score', () => {
