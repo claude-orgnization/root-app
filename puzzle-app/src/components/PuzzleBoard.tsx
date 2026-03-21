@@ -1,38 +1,38 @@
 import type { Level, Shape } from '../types/game'
 import { ShapeSlot } from './ShapeSlot'
 import { ShapePiece } from './ShapePiece'
+import { ShapeSVG } from './ShapeSVG'
+import { useDragDrop } from '../hooks/useDragDrop'
 
 interface PuzzleBoardProps {
   level: Level
-  selectedPieceId: string | null
   wrongSlotId: string | null
   availablePieceIds: string[]
-  selectPiece: (pieceId: string) => void
-  placePiece: (slotId: string) => void
+  placePieceById: (pieceId: string, slotId: string) => void
 }
 
 export function PuzzleBoard({
   level,
-  selectedPieceId,
   wrongSlotId,
   availablePieceIds,
-  selectPiece,
-  placePiece,
+  placePieceById,
 }: PuzzleBoardProps) {
   const pieceById = new Map<string, Shape>(
     level.pieces.map((p) => [p.id, p]),
   )
 
+  const { draggingPieceId, dragPos, dragOverSlotId, startDrag } = useDragDrop(placePieceById)
+
   const availablePieces = availablePieceIds
     .map((id) => pieceById.get(id))
     .filter((p): p is Shape => p !== undefined)
 
+  const draggingPiece = draggingPieceId ? (pieceById.get(draggingPieceId) ?? null) : null
+
   return (
-    <main className="flex flex-col items-center gap-8 p-6">
+    <main className="flex flex-col items-center gap-8 p-6 select-none">
       <p className="text-lg text-gray-500">
-        {selectedPieceId
-          ? 'はめたいばしょをタップしてね！'
-          : 'かたちをえらんでね！'}
+        {draggingPieceId ? 'おきたいばしょにはなしてね！' : 'かたちをドラッグしてね！'}
       </p>
 
       {/* Slot area */}
@@ -46,7 +46,7 @@ export function PuzzleBoard({
                 slot={slot}
                 filledPiece={filledPiece}
                 isWrong={wrongSlotId === slot.id}
-                onPlace={placePiece}
+                isDragOver={dragOverSlotId === slot.id}
               />
             )
           })}
@@ -61,8 +61,8 @@ export function PuzzleBoard({
               <ShapePiece
                 key={piece.id}
                 piece={piece}
-                isSelected={selectedPieceId === piece.id}
-                onSelect={selectPiece}
+                isDragging={draggingPieceId === piece.id}
+                onDragStart={startDrag}
               />
             ))}
             {availablePieces.length === 0 && (
@@ -71,6 +71,18 @@ export function PuzzleBoard({
           </div>
         </div>
       </section>
+
+      {/* Drag ghost — pointer-events-none so elementFromPoint skips it */}
+      {draggingPiece && dragPos && (
+        <div
+          className="fixed pointer-events-none z-50 -translate-x-1/2 -translate-y-1/2"
+          style={{ left: dragPos.x, top: dragPos.y }}
+        >
+          <div className="w-24 h-24 rounded-2xl bg-white shadow-2xl flex items-center justify-center opacity-90 scale-110">
+            <ShapeSVG type={draggingPiece.type} color={draggingPiece.color} size={64} />
+          </div>
+        </div>
+      )}
     </main>
   )
 }
