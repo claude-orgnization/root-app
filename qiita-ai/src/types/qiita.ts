@@ -15,3 +15,4 @@ export interface QiitaArticle {
 }
 
 export type SortOrder = 'created' | 'likes'
+export type DateRange = 'all' | 'week' | 'month' | '3months'

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { Article, SourceFilter } from '../types/article'
-import type { SortOrder } from '../types/qiita'
+import type { SortOrder, DateRange } from '../types/qiita'
 import { fetchQiitaArticles } from '../utils/qiitaApi'
 import { fetchZennArticles } from '../utils/zennApi'
 
@@ -9,6 +9,7 @@ interface UseArticlesParams {
   sort: SortOrder
   page: number
   source: SourceFilter
+  dateRange: DateRange
 }
 
 interface UseArticlesResult {
@@ -18,7 +19,7 @@ interface UseArticlesResult {
   totalCount: number
 }
 
-export function useArticles({ tags, sort, page, source }: UseArticlesParams): UseArticlesResult {
+export function useArticles({ tags, sort, page, source, dateRange }: UseArticlesParams): UseArticlesResult {
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -32,7 +33,7 @@ export function useArticles({ tags, sort, page, source }: UseArticlesParams): Us
 
     async function load() {
       if (source === 'qiita') {
-        return fetchQiitaArticles({ tags, sort, page })
+        return fetchQiitaArticles({ tags, sort, page, dateRange })
       }
 
       if (source === 'zenn') {
@@ -41,7 +42,7 @@ export function useArticles({ tags, sort, page, source }: UseArticlesParams): Us
 
       // 'all': fetch both in parallel, merge results
       const [qiitaResult, zennResult] = await Promise.allSettled([
-        fetchQiitaArticles({ tags, sort, page }),
+        fetchQiitaArticles({ tags, sort, page, dateRange }),
         fetchZennArticles({ tags, sort, page }),
       ])
 
@@ -85,7 +86,7 @@ export function useArticles({ tags, sort, page, source }: UseArticlesParams): Us
     return () => {
       cancelled = true
     }
-  }, [tags.join(','), sort, page, source])
+  }, [tags.join(','), sort, page, source, dateRange])
 
   return { articles, loading, error, totalCount }
 }
