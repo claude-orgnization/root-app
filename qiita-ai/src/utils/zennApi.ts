@@ -70,7 +70,7 @@ export async function fetchZennArticles({
   const results = await Promise.allSettled(
     topics.map((topic) =>
       fetch(
-        `${BASE_URL}/articles?topicname=${topic}&order=${order}&count=${COUNT}&page=${page}`
+        `${BASE_URL}/articles?topicname=${topic}&order=${order}&page=${page}`
       ).then((res) => {
         if (!res.ok) throw new Error(`Zenn API error: ${res.status}`)
         return res.json() as Promise<ZennResponse>
@@ -78,18 +78,25 @@ export async function fetchZennArticles({
     )
   )
 
+  const fulfilledResults = results.filter(
+    (r): r is PromiseFulfilledResult<ZennResponse> => r.status === 'fulfilled'
+  )
+
+  if (fulfilledResults.length === 0 && results.length > 0) {
+    const firstError = (results[0] as PromiseRejectedResult).reason as Error
+    throw new Error(firstError.message ?? 'Zenn API request failed')
+  }
+
   const seen = new Set<number>()
   const articles: Article[] = []
   let hasNextPage = false
 
-  for (const result of results) {
-    if (result.status === 'fulfilled') {
-      if (result.value.next_page !== null) hasNextPage = true
-      for (const a of result.value.articles) {
-        if (!seen.has(a.id)) {
-          seen.add(a.id)
-          articles.push(toArticle(a))
-        }
+  for (const result of fulfilledResults) {
+    if (result.value.next_page !== null) hasNextPage = true
+    for (const a of result.value.articles) {
+      if (!seen.has(a.id)) {
+        seen.add(a.id)
+        articles.push(toArticle(a))
       }
     }
   }
