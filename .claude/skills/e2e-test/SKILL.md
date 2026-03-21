@@ -1,3 +1,10 @@
+---
+name: e2e-test
+description: E2Eテストを作成・実行するスキル。主要なユーザーフローが正しく動作することを検証する。
+argument-hint: "<対象フロー名>"
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash
+---
+
 # /e2e-test — E2Eテスト実行スキル
 
 ## 説明

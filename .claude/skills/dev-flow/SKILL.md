@@ -1,3 +1,10 @@
+---
+name: dev-flow
+description: 要件定義→設計→実装→PR作成まで開発の全フローを一貫実行するオーケストレーター。新機能開発や大きなタスクの自動化時に使用する。
+argument-hint: "<機能の要望や課題の説明>"
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, TodoWrite, AskUserQuestion
+---
+
 # /dev-flow — 開発フルフロー実行スキル
 
 ## 説明

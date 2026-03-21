@@ -1,3 +1,10 @@
+---
+name: task-breakdown
+description: 仕様書とアーキテクチャから実装タスクを細かく分解し、優先順位と依存関係を整理するスキル。
+argument-hint: "<対象機能名>"
+allowed-tools: Read, Glob, Grep, TodoWrite, AskUserQuestion
+---
+
 # /task-breakdown — タスク分解スキル
 
 ## 説明

@@ -1,3 +1,10 @@
+---
+name: create-pr
+description: 実装・テスト完了後にコード品質チェックを行い、PRを作成するスキル。
+argument-hint: "[--draft]"
+allowed-tools: Read, Glob, Grep, Bash
+---
+
 # /create-pr — プルリクエスト作成スキル
 
 ## 説明

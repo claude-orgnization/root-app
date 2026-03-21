@@ -1,3 +1,10 @@
+---
+name: tech-stack
+description: 既存の技術スタックとの整合性を確認し、新規ライブラリの選定・導入を行うスキル。
+argument-hint: "<検討領域（例: 状態管理、テスト）>"
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, AskUserQuestion
+---
+
 # /tech-stack — 技術スタック決定スキル
 
 ## 説明

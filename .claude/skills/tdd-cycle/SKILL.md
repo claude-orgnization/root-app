@@ -1,3 +1,10 @@
+---
+name: tdd-cycle
+description: RED→GREEN→REFACTORのTDDサイクルを実行するスキル。テスト作成→最小実装→リファクタリングを繰り返す。
+argument-hint: "<対象ファイルまたはタスク名>"
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, TodoWrite
+---
+
 # /tdd-cycle — TDDサイクル実行スキル
 
 ## 説明

@@ -1,3 +1,10 @@
+---
+name: spec-define
+description: ユーザーの要望をヒアリングし、構造化された要件仕様書（docs/SPEC.md）に変換するスキル。
+argument-hint: "<機能の要望や課題>"
+allowed-tools: Read, Write, Edit, Glob, Grep, AskUserQuestion
+---
+
 # /spec-define — 要件仕様定義スキル
 
 ## 説明

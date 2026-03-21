@@ -1,3 +1,10 @@
+---
+name: arch-design
+description: 確定した仕様をもとにデータモデル・API・コンポーネント構成を設計し、ARCHITECTURE.mdを更新するスキル。
+argument-hint: "<対象機能名>"
+allowed-tools: Read, Write, Edit, Glob, Grep
+---
+
 # /arch-design — アーキテクチャ設計スキル
 
 ## 説明
