@@ -28,21 +28,22 @@ export interface Level {
   pieces: Shape[]
 }
 
-export interface HardSlot {
+export interface TangramSlotDef {
   id: string
   targetType: ShapeType
-  filledBy: string | null
-  x: number
-  y: number
-  width: number
-  height: number
+  points: string // SVG polygon points in canvas coordinates
 }
 
-export interface HardPuzzleConfig {
+export interface TangramSlot extends TangramSlotDef {
+  filledBy: string | null
+}
+
+export interface TangramPuzzleConfig {
   id: number
   title: string
   subtitle: string
   canvasWidth: number
   canvasHeight: number
-  slots: Omit<HardSlot, 'filledBy'>[]
+  outlinePath: string // SVG path for the complete combined silhouette
+  slots: TangramSlotDef[]
 }
