@@ -56,5 +56,7 @@ function renderShape(type: ShapeType, color: string) {
           fill={color}
         />
       )
+    case 'parallelogram':
+      return <polygon points="5,80 80,80 95,20 20,20" fill={color} />
   }
 }
