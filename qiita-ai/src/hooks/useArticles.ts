@@ -10,6 +10,7 @@ interface UseArticlesParams {
   page: number
   source: SourceFilter
   dateRange: DateRange
+  retryCount?: number
 }
 
 interface UseArticlesResult {
@@ -39,7 +40,7 @@ function reducer(state: State, action: Action): State {
 
 const initialState: State = { articles: [], loading: true, error: null, totalCount: 0 }
 
-export function useArticles({ tags, sort, page, source, dateRange }: UseArticlesParams): UseArticlesResult {
+export function useArticles({ tags, sort, page, source, dateRange, retryCount = 0 }: UseArticlesParams): UseArticlesResult {
   const [state, dispatch] = useReducer(reducer, initialState)
 
   const tagsKey = tags.join(',')
@@ -63,6 +64,10 @@ export function useArticles({ tags, sort, page, source, dateRange }: UseArticles
         fetchQiitaArticles({ tags, sort, page, dateRange }),
         fetchZennArticles({ tags, sort, page }),
       ])
+
+      if (qiitaResult.status === 'rejected' && zennResult.status === 'rejected') {
+        throw (qiitaResult.reason as Error)
+      }
 
       const qiita =
         qiitaResult.status === 'fulfilled'
@@ -97,7 +102,7 @@ export function useArticles({ tags, sort, page, source, dateRange }: UseArticles
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tagsKey, sort, page, source, dateRange])
+  }, [tagsKey, sort, page, source, dateRange, retryCount])
 
   return state
 }

@@ -21,6 +21,7 @@ export function HomePage() {
     page,
     source,
     dateRange,
+    retryCount: retryKey,
   })
 
   const handleTagsChange = useCallback((tags: string[]) => {
