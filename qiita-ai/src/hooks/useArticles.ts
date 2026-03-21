@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react'
-import type { QiitaArticle, SortOrder } from '../types/qiita'
+import { useReducer, useEffect } from 'react'
+import type { QiitaArticle, SortOrder, DateRange } from '../types/qiita'
 import { fetchArticles } from '../utils/qiitaApi'
 
 interface UseArticlesParams {
   tags: string[]
   sort: SortOrder
   page: number
+  dateRange: DateRange
 }
 
 interface UseArticlesResult {
@@ -15,38 +16,49 @@ interface UseArticlesResult {
   totalCount: number
 }
 
-export function useArticles({ tags, sort, page }: UseArticlesParams): UseArticlesResult {
-  const [articles, setArticles] = useState<QiitaArticle[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [totalCount, setTotalCount] = useState(0)
+type State = UseArticlesResult
+
+type Action =
+  | { type: 'loading' }
+  | { type: 'success'; articles: QiitaArticle[]; totalCount: number }
+  | { type: 'error'; message: string }
+
+function reducer(state: State, action: Action): State {
+  switch (action.type) {
+    case 'loading':
+      return { ...state, loading: true, error: null }
+    case 'success':
+      return { articles: action.articles, totalCount: action.totalCount, loading: false, error: null }
+    case 'error':
+      return { ...state, loading: false, error: action.message }
+  }
+}
+
+const initialState: State = { articles: [], loading: true, error: null, totalCount: 0 }
+
+export function useArticles({ tags, sort, page, dateRange }: UseArticlesParams): UseArticlesResult {
+  const [state, dispatch] = useReducer(reducer, initialState)
+
+  const tagsKey = tags.join(',')
 
   useEffect(() => {
     let cancelled = false
 
-    setLoading(true)
-    setError(null)
+    dispatch({ type: 'loading' })
 
-    fetchArticles({ tags, sort, page })
+    fetchArticles({ tags, sort, page, dateRange })
       .then(({ articles, totalCount }) => {
-        if (!cancelled) {
-          setArticles(articles)
-          setTotalCount(totalCount)
-        }
+        if (!cancelled) dispatch({ type: 'success', articles, totalCount })
       })
       .catch((err: Error) => {
-        if (!cancelled) {
-          setError(err.message)
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) dispatch({ type: 'error', message: err.message })
       })
 
     return () => {
       cancelled = true
     }
-  }, [tags.join(','), sort, page])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tagsKey, sort, page, dateRange])
 
-  return { articles, loading, error, totalCount }
+  return state
 }
