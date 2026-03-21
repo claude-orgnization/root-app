@@ -7,6 +7,7 @@ export const AI_TAGS = [
   'OpenAI',
   'RAG',
   '生成AI',
+  'Claude',
 ] as const
 
 export type AiTag = (typeof AI_TAGS)[number]
