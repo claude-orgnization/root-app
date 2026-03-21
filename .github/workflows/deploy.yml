@@ -21,7 +21,9 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: qiita-ai/package-lock.json
+          cache-dependency-path: |
+            qiita-ai/package-lock.json
+            puzzle-app/package-lock.json
 
       - name: Install dependencies
         working-directory: qiita-ai
@@ -31,11 +33,21 @@ jobs:
         working-directory: qiita-ai
         run: npm run build
 
+      - name: Install puzzle-app dependencies
+        working-directory: puzzle-app
+        run: npm ci
+
+      - name: Build puzzle-app
+        working-directory: puzzle-app
+        run: npm run build
+
       - name: Prepare deploy directory
         run: |
           mkdir -p deploy/qiita-ai
+          mkdir -p deploy/puzzle-app
           cp index.html deploy/index.html
           cp -r qiita-ai/dist/. deploy/qiita-ai/
+          cp -r puzzle-app/dist/. deploy/puzzle-app/
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
