@@ -8,6 +8,7 @@ export const SHAPE_COLORS: Record<ShapeType, string> = {
   heart: '#EC407A',
   pentagon: '#66BB6A',
   hexagon: '#AB47BC',
+  parallelogram: '#FF8A65',
 }
 
 export const SHAPE_NAMES_JP: Record<ShapeType, string> = {
@@ -18,6 +19,7 @@ export const SHAPE_NAMES_JP: Record<ShapeType, string> = {
   heart: 'はーと',
   pentagon: 'ごかっけい',
   hexagon: 'ろっかっけい',
+  parallelogram: 'へいこうしへんけい',
 }
 
 export const LEVEL_SHAPE_CONFIGS: ShapeType[][] = [

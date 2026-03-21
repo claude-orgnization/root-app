@@ -59,6 +59,11 @@ describe('ShapeSVG', () => {
     expect(container.querySelector('polygon')).toBeInTheDocument()
   })
 
+  it('renders a parallelogram shape', () => {
+    const { container } = render(<ShapeSVG type="parallelogram" color="#FF8A65" />)
+    expect(container.querySelector('polygon')).toBeInTheDocument()
+  })
+
   it('applies the color to the shape element', () => {
     const { container } = render(<ShapeSVG type="circle" color="#FF6B6B" />)
     const circle = container.querySelector('circle')
