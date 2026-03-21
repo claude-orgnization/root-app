@@ -1,4 +1,5 @@
 import type { QiitaArticle, SortOrder } from '../types/qiita'
+import type { Article } from '../types/article'
 import { DEFAULT_QUERY } from '../constants/tags'
 
 const BASE_URL = 'https://qiita.com/api/v2'
@@ -11,11 +12,27 @@ interface FetchArticlesParams {
 }
 
 interface FetchArticlesResult {
-  articles: QiitaArticle[]
+  articles: Article[]
   totalCount: number
 }
 
-export async function fetchArticles({
+function toArticle(a: QiitaArticle): Article {
+  return {
+    id: `qiita-${a.id}`,
+    title: a.title,
+    url: a.url,
+    created_at: a.created_at,
+    likes_count: a.likes_count,
+    tags: a.tags.map((t) => t.name),
+    source: 'qiita',
+    author: {
+      name: a.user.id,
+      avatar_url: a.user.profile_image_url,
+    },
+  }
+}
+
+export async function fetchQiitaArticles({
   tags,
   sort,
   page,
@@ -40,8 +57,8 @@ export async function fetchArticles({
     throw new Error(`Qiita API error: ${res.status}`)
   }
 
-  const articles: QiitaArticle[] = await res.json()
+  const raw: QiitaArticle[] = await res.json()
   const totalCount = Number(res.headers.get('Total-Count') ?? 0)
 
-  return { articles, totalCount }
+  return { articles: raw.map(toArticle), totalCount }
 }

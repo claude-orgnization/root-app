@@ -1,29 +1,49 @@
-import type { QiitaArticle } from '../types/qiita'
+import type { Article } from '../types/article'
 import { formatDate } from '../utils/date'
 
 interface Props {
-  article: QiitaArticle
+  article: Article
+}
+
+const SOURCE_BADGE: Record<Article['source'], { label: string; className: string }> = {
+  qiita: {
+    label: 'Qiita',
+    className: 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300',
+  },
+  zenn: {
+    label: 'Zenn',
+    className: 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
+  },
 }
 
 export function ArticleCard({ article }: Props) {
+  const badge = SOURCE_BADGE[article.source]
+
   return (
     <article className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5 flex flex-col gap-3 hover:shadow-md transition-shadow">
-      <a
-        href={article.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-base font-semibold text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 leading-snug"
-      >
-        {article.title}
-      </a>
+      <div className="flex items-start justify-between gap-2">
+        <a
+          href={article.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-base font-semibold text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 leading-snug"
+        >
+          {article.title}
+        </a>
+        <span
+          className={`text-xs px-2 py-0.5 rounded shrink-0 font-medium ${badge.className}`}
+        >
+          {badge.label}
+        </span>
+      </div>
 
       <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
         <img
-          src={article.user.profile_image_url}
-          alt={article.user.id}
+          src={article.author.avatar_url}
+          alt={article.author.name}
           className="w-5 h-5 rounded-full"
         />
-        <span>{article.user.id}</span>
+        <span>{article.author.name}</span>
         <span>·</span>
         <span>{formatDate(article.created_at)}</span>
       </div>
@@ -32,10 +52,10 @@ export function ArticleCard({ article }: Props) {
         <div className="flex flex-wrap gap-1">
           {article.tags.slice(0, 5).map((tag) => (
             <span
-              key={tag.name}
+              key={tag}
               className="text-xs bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded"
             >
-              {tag.name}
+              {tag}
             </span>
           ))}
         </div>

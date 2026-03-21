@@ -1,22 +1,25 @@
 import { useState, useEffect } from 'react'
-import type { QiitaArticle, SortOrder } from '../types/qiita'
-import { fetchArticles } from '../utils/qiitaApi'
+import type { Article, SourceFilter } from '../types/article'
+import type { SortOrder } from '../types/qiita'
+import { fetchQiitaArticles } from '../utils/qiitaApi'
+import { fetchZennArticles } from '../utils/zennApi'
 
 interface UseArticlesParams {
   tags: string[]
   sort: SortOrder
   page: number
+  source: SourceFilter
 }
 
 interface UseArticlesResult {
-  articles: QiitaArticle[]
+  articles: Article[]
   loading: boolean
   error: string | null
   totalCount: number
 }
 
-export function useArticles({ tags, sort, page }: UseArticlesParams): UseArticlesResult {
-  const [articles, setArticles] = useState<QiitaArticle[]>([])
+export function useArticles({ tags, sort, page, source }: UseArticlesParams): UseArticlesResult {
+  const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [totalCount, setTotalCount] = useState(0)
@@ -27,7 +30,43 @@ export function useArticles({ tags, sort, page }: UseArticlesParams): UseArticle
     setLoading(true)
     setError(null)
 
-    fetchArticles({ tags, sort, page })
+    async function load() {
+      if (source === 'qiita') {
+        return fetchQiitaArticles({ tags, sort, page })
+      }
+
+      if (source === 'zenn') {
+        return fetchZennArticles({ tags, sort, page })
+      }
+
+      // 'all': fetch both in parallel, merge results
+      const [qiitaResult, zennResult] = await Promise.allSettled([
+        fetchQiitaArticles({ tags, sort, page }),
+        fetchZennArticles({ tags, sort, page }),
+      ])
+
+      const qiita =
+        qiitaResult.status === 'fulfilled'
+          ? qiitaResult.value
+          : { articles: [], totalCount: 0 }
+      const zenn =
+        zennResult.status === 'fulfilled'
+          ? zennResult.value
+          : { articles: [], totalCount: 0 }
+
+      const merged = [...qiita.articles, ...zenn.articles]
+      if (sort === 'likes') {
+        merged.sort((a, b) => b.likes_count - a.likes_count)
+      } else {
+        merged.sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )
+      }
+
+      return { articles: merged, totalCount: qiita.totalCount }
+    }
+
+    load()
       .then(({ articles, totalCount }) => {
         if (!cancelled) {
           setArticles(articles)
@@ -46,7 +85,7 @@ export function useArticles({ tags, sort, page }: UseArticlesParams): UseArticle
     return () => {
       cancelled = true
     }
-  }, [tags.join(','), sort, page])
+  }, [tags.join(','), sort, page, source])
 
   return { articles, loading, error, totalCount }
 }

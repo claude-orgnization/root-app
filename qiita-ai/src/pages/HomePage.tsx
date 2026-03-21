@@ -5,10 +5,12 @@ import { ArticleList } from '../components/ArticleList'
 import { Pagination } from '../components/Pagination'
 import { ErrorMessage } from '../components/ErrorMessage'
 import type { SortOrder } from '../types/qiita'
+import type { SourceFilter } from '../types/article'
 
 export function HomePage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [sort, setSort] = useState<SortOrder>('created')
+  const [source, setSource] = useState<SourceFilter>('all')
   const [page, setPage] = useState(1)
   const [retryKey, setRetryKey] = useState(0)
 
@@ -16,6 +18,7 @@ export function HomePage() {
     tags: selectedTags,
     sort,
     page,
+    source,
   })
 
   const handleTagsChange = useCallback((tags: string[]) => {
@@ -28,6 +31,11 @@ export function HomePage() {
     setPage(1)
   }, [])
 
+  const handleSourceChange = useCallback((newSource: SourceFilter) => {
+    setSource(newSource)
+    setPage(1)
+  }, [])
+
   const handleRetry = useCallback(() => {
     setRetryKey((k) => k + 1)
   }, [])
@@ -37,8 +45,10 @@ export function HomePage() {
       <FilterBar
         selectedTags={selectedTags}
         sort={sort}
+        source={source}
         onTagsChange={handleTagsChange}
         onSortChange={handleSortChange}
+        onSourceChange={handleSourceChange}
       />
 
       {error ? (
