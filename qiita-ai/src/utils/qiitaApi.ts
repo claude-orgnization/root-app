@@ -65,10 +65,20 @@ export async function fetchQiitaArticles({
     per_page: String(PER_PAGE),
   })
 
-  const res = await fetch(`${BASE_URL}/items?${params}`)
+  let res: Response
+  try {
+    res = await fetch(`${BASE_URL}/items?${params}`)
+  } catch (err) {
+    console.error('[Qiita] fetch failed:', err)
+    throw new Error('Qiita APIへの接続に失敗しました（ネットワークエラーまたはCORS制限）')
+  }
 
   if (!res.ok) {
-    throw new Error(`Qiita API error: ${res.status}`)
+    console.error(`[Qiita] HTTP ${res.status}`)
+    if (res.status === 403) {
+      throw new Error('Qiita APIのレート制限に達しました（1時間60回まで）。しばらく待ってから再試行してください。')
+    }
+    throw new Error(`Qiita API エラー: ${res.status}`)
   }
 
   const raw: QiitaArticle[] = await res.json()

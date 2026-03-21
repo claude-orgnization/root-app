@@ -18,27 +18,28 @@ interface UseArticlesResult {
   loading: boolean
   error: string | null
   totalCount: number
+  zennUnavailable: boolean
 }
 
 type State = UseArticlesResult
 
 type Action =
   | { type: 'loading' }
-  | { type: 'success'; articles: Article[]; totalCount: number }
+  | { type: 'success'; articles: Article[]; totalCount: number; zennUnavailable?: boolean }
   | { type: 'error'; message: string }
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'loading':
-      return { ...state, loading: true, error: null }
+      return { ...state, loading: true, error: null, zennUnavailable: false }
     case 'success':
-      return { articles: action.articles, totalCount: action.totalCount, loading: false, error: null }
+      return { articles: action.articles, totalCount: action.totalCount, loading: false, error: null, zennUnavailable: action.zennUnavailable ?? false }
     case 'error':
       return { ...state, loading: false, error: action.message }
   }
 }
 
-const initialState: State = { articles: [], loading: true, error: null, totalCount: 0 }
+const initialState: State = { articles: [], loading: true, error: null, totalCount: 0, zennUnavailable: false }
 
 export function useArticles({ tags, sort, page, source, dateRange, retryCount = 0 }: UseArticlesParams): UseArticlesResult {
   const [state, dispatch] = useReducer(reducer, initialState)
@@ -50,7 +51,7 @@ export function useArticles({ tags, sort, page, source, dateRange, retryCount = 
 
     dispatch({ type: 'loading' })
 
-    async function load(): Promise<{ articles: Article[]; totalCount: number }> {
+    async function load(): Promise<{ articles: Article[]; totalCount: number; zennUnavailable?: boolean }> {
       if (source === 'qiita') {
         return fetchQiitaArticles({ tags, sort, page, dateRange })
       }
@@ -66,7 +67,13 @@ export function useArticles({ tags, sort, page, source, dateRange, retryCount = 
       ])
 
       if (qiitaResult.status === 'rejected' && zennResult.status === 'rejected') {
+        console.error('[useArticles] both APIs failed:', qiitaResult.reason, zennResult.reason)
         throw (qiitaResult.reason as Error)
+      }
+
+      const zennFailed = zennResult.status === 'rejected'
+      if (zennFailed) {
+        console.warn('[useArticles] Zenn failed, showing Qiita only:', (zennResult as PromiseRejectedResult).reason)
       }
 
       const qiita =
@@ -87,12 +94,12 @@ export function useArticles({ tags, sort, page, source, dateRange, retryCount = 
         )
       }
 
-      return { articles: merged, totalCount: qiita.totalCount }
+      return { articles: merged, totalCount: qiita.totalCount, zennUnavailable: zennFailed }
     }
 
     load()
-      .then(({ articles, totalCount }) => {
-        if (!cancelled) dispatch({ type: 'success', articles, totalCount })
+      .then(({ articles, totalCount, zennUnavailable }) => {
+        if (!cancelled) dispatch({ type: 'success', articles, totalCount, zennUnavailable })
       })
       .catch((err: Error) => {
         if (!cancelled) dispatch({ type: 'error', message: err.message })

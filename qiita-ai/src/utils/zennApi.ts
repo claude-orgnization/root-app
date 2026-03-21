@@ -72,7 +72,7 @@ export async function fetchZennArticles({
       fetch(
         `${BASE_URL}/articles?topicname=${topic}&order=${order}&page=${page}`
       ).then((res) => {
-        if (!res.ok) throw new Error(`Zenn API error: ${res.status}`)
+        if (!res.ok) throw new Error(`Zenn API エラー: ${res.status}`)
         return res.json() as Promise<ZennResponse>
       })
     )
@@ -83,8 +83,17 @@ export async function fetchZennArticles({
   )
 
   if (fulfilledResults.length === 0 && results.length > 0) {
-    const firstError = (results[0] as PromiseRejectedResult).reason as Error
-    throw new Error(firstError.message ?? 'Zenn API request failed')
+    const firstErr = (results[0] as PromiseRejectedResult).reason as Error
+    console.error('[Zenn] all topic requests failed:', firstErr)
+    if (firstErr instanceof TypeError) {
+      throw new Error('Zenn APIへの接続に失敗しました（ネットワークエラーまたはCORS制限）。Zennタブの代わりに「すべて」または「Qiita」をお試しください。')
+    }
+    throw new Error(firstErr.message ?? 'Zenn API request failed')
+  }
+
+  const rejectedCount = results.length - fulfilledResults.length
+  if (rejectedCount > 0) {
+    console.warn(`[Zenn] ${rejectedCount}/${results.length} topic requests failed`)
   }
 
   const seen = new Set<number>()

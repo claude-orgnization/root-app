@@ -15,7 +15,7 @@ export function HomePage() {
   const [page, setPage] = useState(1)
   const [retryKey, setRetryKey] = useState(0)
 
-  const { articles, loading, error, totalCount } = useArticles({
+  const { articles, loading, error, totalCount, zennUnavailable } = useArticles({
     tags: selectedTags,
     sort,
     page,
@@ -62,6 +62,11 @@ export function HomePage() {
       />
 
       <div className="flex-1 flex flex-col gap-6 min-w-0">
+        {zennUnavailable && (
+          <p className="text-xs text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg px-3 py-2">
+            ⚠️ Zenn APIへの接続に失敗しました。Qiitaの記事のみ表示しています。
+          </p>
+        )}
         {error ? (
           <ErrorMessage message={error} onRetry={handleRetry} key={retryKey} />
         ) : (
