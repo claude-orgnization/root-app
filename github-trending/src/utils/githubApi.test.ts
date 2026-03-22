@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { fetchTrendingRepos, buildSearchQuery } from './githubApi'
-import type { DateRange } from '../types/github'
 
 describe('buildSearchQuery', () => {
   beforeEach(() => {

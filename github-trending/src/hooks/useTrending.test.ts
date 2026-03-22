@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { useTrending } from './useTrending'
 import * as githubApi from '../utils/githubApi'
-import type { GitHubRepo } from '../types/github'
+import type { GitHubRepo, DateRange } from '../types/github'
 
 const mockRepo: GitHubRepo = {
   id: 1,
@@ -59,12 +59,12 @@ describe('useTrending', () => {
   it('パラメータ変更時に再フェッチする', async () => {
     const fetchSpy = vi.spyOn(githubApi, 'fetchTrendingRepos')
     const { rerender } = renderHook(
-      ({ dateRange }: { dateRange: 'today' | 'week' | 'month' }) =>
+      ({ dateRange }: { dateRange: DateRange }) =>
         useTrending({ dateRange, language: 'All', page: 1 }),
-      { initialProps: { dateRange: 'week' as const } }
+      { initialProps: { dateRange: 'week' as DateRange } }
     )
     await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1))
-    rerender({ dateRange: 'month' })
+    rerender({ dateRange: 'month' as DateRange })
     await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(2))
   })
 })
