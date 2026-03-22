@@ -6,7 +6,7 @@ import { FilterBar } from './FilterBar'
 describe('FilterBar', () => {
   const defaultProps = {
     dateRange: 'week' as const,
-    language: 'All',
+    language: 'All' as const,
     onDateRangeChange: vi.fn(),
     onLanguageChange: vi.fn(),
   }
