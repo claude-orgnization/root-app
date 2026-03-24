@@ -3,7 +3,6 @@ import type { AmidaConfig, PathPoint } from '../types/amida.ts'
 import {
   LINE_SPACING,
   ROW_HEIGHT,
-  PADDING,
   TOP_OFFSET,
   svgWidth,
   svgHeight,
