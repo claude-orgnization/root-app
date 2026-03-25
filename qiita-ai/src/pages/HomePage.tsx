@@ -1,11 +1,13 @@
 import { useState, useCallback } from 'react'
 import { useArticles } from '../hooks/useArticles'
+import { useFavorites } from '../hooks/useFavorites'
+import { useKanban } from '../hooks/useKanban'
 import { FilterSidebar } from '../components/FilterSidebar'
 import { ArticleList } from '../components/ArticleList'
 import { Pagination } from '../components/Pagination'
 import { ErrorMessage } from '../components/ErrorMessage'
 import type { SortOrder, DateRange } from '../types/qiita'
-import type { SourceFilter } from '../types/article'
+import type { SourceFilter, Article } from '../types/article'
 
 export function HomePage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([])
@@ -14,6 +16,21 @@ export function HomePage() {
   const [source, setSource] = useState<SourceFilter>('all')
   const [page, setPage] = useState(1)
   const [retryKey, setRetryKey] = useState(0)
+  const { isFavorite, toggleFavorite } = useFavorites()
+  const { addArticleToBoard, removeArticleFromBoard } = useKanban()
+
+  const handleToggleFavorite = useCallback(
+    (article: Article) => {
+      const wasFavorite = isFavorite(article.id)
+      toggleFavorite(article)
+      if (wasFavorite) {
+        removeArticleFromBoard(article.id)
+      } else {
+        addArticleToBoard(article.id)
+      }
+    },
+    [isFavorite, toggleFavorite, addArticleToBoard, removeArticleFromBoard],
+  )
 
   const { articles, loading, error, totalCount } = useArticles({
     tags: selectedTags,
@@ -66,7 +83,12 @@ export function HomePage() {
           <ErrorMessage message={error} onRetry={handleRetry} key={retryKey} />
         ) : (
           <>
-            <ArticleList articles={articles} loading={loading} />
+            <ArticleList
+              articles={articles}
+              loading={loading}
+              isFavorite={isFavorite}
+              onToggleFavorite={handleToggleFavorite}
+            />
             <Pagination page={page} totalCount={totalCount} onPageChange={setPage} />
           </>
         )}
