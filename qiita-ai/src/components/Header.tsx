@@ -11,7 +11,10 @@ export function Header() {
           QiitaAI Watch
         </Link>
         <div className="flex items-center gap-4">
-          <nav>
+          <nav className="flex items-center gap-4">
+            <Link to="/board" className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400">
+              Board
+            </Link>
             <Link to="/about" className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400">
               About
             </Link>

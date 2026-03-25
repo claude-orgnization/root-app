@@ -5,9 +5,11 @@ import { SkeletonCard } from './SkeletonCard'
 interface Props {
   articles: Article[]
   loading: boolean
+  isFavorite?: (articleId: string) => boolean
+  onToggleFavorite?: (article: Article) => void
 }
 
-export function ArticleList({ articles, loading }: Props) {
+export function ArticleList({ articles, loading, isFavorite, onToggleFavorite }: Props) {
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -29,7 +31,12 @@ export function ArticleList({ articles, loading }: Props) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {articles.map((article) => (
-        <ArticleCard key={article.id} article={article} />
+        <ArticleCard
+          key={article.id}
+          article={article}
+          isFavorite={isFavorite?.(article.id)}
+          onToggleFavorite={onToggleFavorite}
+        />
       ))}
     </div>
   )
