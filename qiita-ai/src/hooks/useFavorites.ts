@@ -1,23 +1,46 @@
-import { useState, useCallback } from 'react'
+import { useCallback, useSyncExternalStore } from 'react'
 import type { Article } from '../types/article'
 import type { FavoriteArticle } from '../types/kanban'
 import { FAVORITES_STORAGE_KEY } from '../types/kanban'
+import { loadJson, saveJson } from '../utils/storage'
 
-function loadFavorites(): FavoriteArticle[] {
-  try {
-    const raw = localStorage.getItem(FAVORITES_STORAGE_KEY)
-    return raw ? (JSON.parse(raw) as FavoriteArticle[]) : []
-  } catch {
-    return []
+type Listener = () => void
+
+let cache: FavoriteArticle[] | null = null
+const listeners = new Set<Listener>()
+
+function getSnapshot(): FavoriteArticle[] {
+  if (cache === null) {
+    cache = loadJson<FavoriteArticle[]>(FAVORITES_STORAGE_KEY, [])
+  }
+  return cache
+}
+
+function subscribe(listener: Listener): () => void {
+  listeners.add(listener)
+
+  const onStorage = (e: StorageEvent) => {
+    if (e.key === FAVORITES_STORAGE_KEY) {
+      cache = null
+      listeners.forEach((l) => l())
+    }
+  }
+  window.addEventListener('storage', onStorage)
+
+  return () => {
+    listeners.delete(listener)
+    window.removeEventListener('storage', onStorage)
   }
 }
 
-function saveFavorites(favorites: FavoriteArticle[]): void {
-  localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favorites))
+function setFavorites(next: FavoriteArticle[]): void {
+  saveJson(FAVORITES_STORAGE_KEY, next)
+  cache = next
+  listeners.forEach((l) => l())
 }
 
 export function useFavorites() {
-  const [favorites, setFavorites] = useState<FavoriteArticle[]>(loadFavorites)
+  const favorites = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
 
   const isFavorite = useCallback(
     (articleId: string) => favorites.some((f) => f.id === articleId),
@@ -26,24 +49,19 @@ export function useFavorites() {
 
   const toggleFavorite = useCallback(
     (article: Article) => {
-      setFavorites((prev) => {
-        const exists = prev.some((f) => f.id === article.id)
-        const next = exists
-          ? prev.filter((f) => f.id !== article.id)
-          : [...prev, { ...article, favorited_at: new Date().toISOString() }]
-        saveFavorites(next)
-        return next
-      })
+      const current = getSnapshot()
+      const exists = current.some((f) => f.id === article.id)
+      const next = exists
+        ? current.filter((f) => f.id !== article.id)
+        : [...current, { ...article, favorited_at: new Date().toISOString() }]
+      setFavorites(next)
     },
     [],
   )
 
   const removeFavorite = useCallback((articleId: string) => {
-    setFavorites((prev) => {
-      const next = prev.filter((f) => f.id !== articleId)
-      saveFavorites(next)
-      return next
-    })
+    const current = getSnapshot()
+    setFavorites(current.filter((f) => f.id !== articleId))
   }, [])
 
   const getFavorite = useCallback(

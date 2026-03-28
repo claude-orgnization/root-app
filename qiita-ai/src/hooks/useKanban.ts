@@ -1,30 +1,50 @@
-import { useState, useCallback } from 'react'
+import { useCallback, useSyncExternalStore } from 'react'
 import type { KanbanColumn } from '../types/kanban'
 import { DEFAULT_COLUMNS, COLUMNS_STORAGE_KEY } from '../types/kanban'
+import { loadJson, saveJson } from '../utils/storage'
 
-function loadColumns(): KanbanColumn[] {
-  try {
-    const raw = localStorage.getItem(COLUMNS_STORAGE_KEY)
-    return raw ? (JSON.parse(raw) as KanbanColumn[]) : DEFAULT_COLUMNS
-  } catch {
-    return DEFAULT_COLUMNS
+type Listener = () => void
+
+let cache: KanbanColumn[] | null = null
+const listeners = new Set<Listener>()
+
+function getSnapshot(): KanbanColumn[] {
+  if (cache === null) {
+    cache = loadJson<KanbanColumn[]>(COLUMNS_STORAGE_KEY, DEFAULT_COLUMNS)
+  }
+  return cache
+}
+
+function subscribe(listener: Listener): () => void {
+  listeners.add(listener)
+
+  const onStorage = (e: StorageEvent) => {
+    if (e.key === COLUMNS_STORAGE_KEY) {
+      cache = null
+      listeners.forEach((l) => l())
+    }
+  }
+  window.addEventListener('storage', onStorage)
+
+  return () => {
+    listeners.delete(listener)
+    window.removeEventListener('storage', onStorage)
   }
 }
 
-function saveColumns(columns: KanbanColumn[]): void {
-  localStorage.setItem(COLUMNS_STORAGE_KEY, JSON.stringify(columns))
+function setColumns(next: KanbanColumn[]): void {
+  saveJson(COLUMNS_STORAGE_KEY, next)
+  cache = next
+  listeners.forEach((l) => l())
+}
+
+function updateColumns(updater: (prev: KanbanColumn[]) => KanbanColumn[]): void {
+  const next = updater(getSnapshot())
+  setColumns(next)
 }
 
 export function useKanban() {
-  const [columns, setColumns] = useState<KanbanColumn[]>(loadColumns)
-
-  const updateColumns = useCallback((updater: (prev: KanbanColumn[]) => KanbanColumn[]) => {
-    setColumns((prev) => {
-      const next = updater(prev)
-      saveColumns(next)
-      return next
-    })
-  }, [])
+  const columns = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
 
   const addArticleToBoard = useCallback(
     (articleId: string) => {
@@ -36,7 +56,7 @@ export function useKanban() {
         )
       })
     },
-    [updateColumns],
+    [],
   )
 
   const removeArticleFromBoard = useCallback(
@@ -48,7 +68,7 @@ export function useKanban() {
         })),
       )
     },
-    [updateColumns],
+    [],
   )
 
   const moveArticle = useCallback(
@@ -72,7 +92,7 @@ export function useKanban() {
         }),
       )
     },
-    [updateColumns],
+    [],
   )
 
   const addColumn = useCallback(
@@ -80,7 +100,7 @@ export function useKanban() {
       const id = `custom-${Date.now()}`
       updateColumns((prev) => [...prev, { id, title, articleIds: [] }])
     },
-    [updateColumns],
+    [],
   )
 
   const renameColumn = useCallback(
@@ -89,7 +109,7 @@ export function useKanban() {
         prev.map((col) => (col.id === columnId ? { ...col, title } : col)),
       )
     },
-    [updateColumns],
+    [],
   )
 
   const deleteColumn = useCallback(
@@ -105,7 +125,7 @@ export function useKanban() {
           )
       })
     },
-    [updateColumns],
+    [],
   )
 
   const findColumnByArticleId = useCallback(
