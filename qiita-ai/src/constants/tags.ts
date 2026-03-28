@@ -28,4 +28,5 @@ export const ZENN_TOPIC_MAP: Record<string, string> = {
 }
 
 // Default Zenn topics to fetch when no tags are selected
-export const DEFAULT_ZENN_TOPICS = ['llm', 'ai', 'chatgpt', 'generativeai', 'rag']
+// Default Zenn topics — limited to 3 to reduce API requests and speed up loading
+export const DEFAULT_ZENN_TOPICS = ['llm', 'ai', 'chatgpt']

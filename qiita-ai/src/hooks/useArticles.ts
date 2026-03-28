@@ -25,7 +25,17 @@ type State = UseArticlesResult
 type Action =
   | { type: 'loading' }
   | { type: 'success'; articles: Article[]; totalCount: number }
+  | { type: 'partial'; articles: Article[]; totalCount: number }
+  | { type: 'append'; articles: Article[]; sort: SortOrder }
   | { type: 'error'; message: string }
+
+function sortArticles(articles: Article[], sort: SortOrder): Article[] {
+  return [...articles].sort((a, b) =>
+    sort === 'likes'
+      ? b.likes_count - a.likes_count
+      : new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  )
+}
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -33,6 +43,12 @@ function reducer(state: State, action: Action): State {
       return { ...state, loading: true, error: null }
     case 'success':
       return { articles: action.articles, totalCount: action.totalCount, loading: false, error: null }
+    case 'partial':
+      return { articles: action.articles, totalCount: action.totalCount, loading: false, error: null }
+    case 'append': {
+      const merged = sortArticles([...state.articles, ...action.articles], action.sort)
+      return { ...state, articles: merged }
+    }
     case 'error':
       return { ...state, loading: false, error: action.message }
   }
@@ -50,53 +66,52 @@ export function useArticles({ tags, sort, page, source, dateRange, retryCount = 
 
     dispatch({ type: 'loading' })
 
-    async function load(): Promise<{ articles: Article[]; totalCount: number }> {
-      if (source === 'qiita') {
-        return fetchQiitaArticles({ tags, sort, page, dateRange })
-      }
+    if (source === 'qiita') {
+      fetchQiitaArticles({ tags, sort, page, dateRange })
+        .then(({ articles, totalCount }) => {
+          if (!cancelled) dispatch({ type: 'success', articles, totalCount })
+        })
+        .catch((err: Error) => {
+          if (!cancelled) dispatch({ type: 'error', message: err.message })
+        })
+    } else if (source === 'zenn') {
+      fetchZennArticles({ tags, sort, page })
+        .then(({ articles, totalCount }) => {
+          if (!cancelled) dispatch({ type: 'success', articles, totalCount })
+        })
+        .catch((err: Error) => {
+          if (!cancelled) dispatch({ type: 'error', message: err.message })
+        })
+    } else {
+      // 'all': Qiitaを先に表示、Zennを後から追加（段階的フェッチ）
+      let qiitaFailed = false
+      let zennFailed = false
 
-      if (source === 'zenn') {
-        return fetchZennArticles({ tags, sort, page })
-      }
+      const qiitaPromise = fetchQiitaArticles({ tags, sort, page, dateRange })
+        .then(({ articles, totalCount }) => {
+          if (!cancelled) dispatch({ type: 'partial', articles, totalCount })
+        })
+        .catch((err: Error) => {
+          qiitaFailed = true
+          return err
+        })
 
-      // 'all': fetch both in parallel, merge results
-      const [qiitaResult, zennResult] = await Promise.allSettled([
-        fetchQiitaArticles({ tags, sort, page, dateRange }),
-        fetchZennArticles({ tags, sort, page }),
-      ])
+      const zennPromise = fetchZennArticles({ tags, sort, page })
+        .then(({ articles }) => {
+          if (!cancelled) dispatch({ type: 'append', articles, sort })
+        })
+        .catch((err: Error) => {
+          zennFailed = true
+          return err
+        })
 
-      if (qiitaResult.status === 'rejected' && zennResult.status === 'rejected') {
-        throw (qiitaResult.reason as Error)
-      }
-
-      const qiita =
-        qiitaResult.status === 'fulfilled'
-          ? qiitaResult.value
-          : { articles: [], totalCount: 0 }
-      const zenn =
-        zennResult.status === 'fulfilled'
-          ? zennResult.value
-          : { articles: [], totalCount: 0 }
-
-      const merged = [...qiita.articles, ...zenn.articles]
-      if (sort === 'likes') {
-        merged.sort((a, b) => b.likes_count - a.likes_count)
-      } else {
-        merged.sort(
-          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        )
-      }
-
-      return { articles: merged, totalCount: qiita.totalCount }
+      Promise.all([qiitaPromise, zennPromise]).then(([qiitaErr]) => {
+        if (!cancelled && qiitaFailed && zennFailed) {
+          const msg = qiitaErr instanceof Error ? qiitaErr.message : '記事の取得に失敗しました'
+          dispatch({ type: 'error', message: msg })
+        }
+      })
     }
-
-    load()
-      .then(({ articles, totalCount }) => {
-        if (!cancelled) dispatch({ type: 'success', articles, totalCount })
-      })
-      .catch((err: Error) => {
-        if (!cancelled) dispatch({ type: 'error', message: err.message })
-      })
 
     return () => {
       cancelled = true
