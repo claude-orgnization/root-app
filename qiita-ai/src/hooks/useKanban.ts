@@ -32,15 +32,16 @@ function subscribe(listener: Listener): () => void {
   }
 }
 
-function setColumns(next: KanbanColumn[]): void {
-  saveJson(COLUMNS_STORAGE_KEY, next)
-  cache = next
-  listeners.forEach((l) => l())
+function writeColumns(next: KanbanColumn[]): void {
+  const ok = saveJson(COLUMNS_STORAGE_KEY, next)
+  if (ok) {
+    cache = next
+  }
 }
 
 function updateColumns(updater: (prev: KanbanColumn[]) => KanbanColumn[]): void {
   const next = updater(getSnapshot())
-  setColumns(next)
+  writeColumns(next)
 }
 
 export function useKanban() {

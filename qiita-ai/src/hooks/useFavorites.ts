@@ -33,10 +33,12 @@ function subscribe(listener: Listener): () => void {
   }
 }
 
-function setFavorites(next: FavoriteArticle[]): void {
-  saveJson(FAVORITES_STORAGE_KEY, next)
-  cache = next
-  listeners.forEach((l) => l())
+function writeFavorites(next: FavoriteArticle[]): boolean {
+  const ok = saveJson(FAVORITES_STORAGE_KEY, next)
+  if (ok) {
+    cache = next
+  }
+  return ok
 }
 
 export function useFavorites() {
@@ -54,14 +56,14 @@ export function useFavorites() {
       const next = exists
         ? current.filter((f) => f.id !== article.id)
         : [...current, { ...article, favorited_at: new Date().toISOString() }]
-      setFavorites(next)
+      writeFavorites(next)
     },
     [],
   )
 
   const removeFavorite = useCallback((articleId: string) => {
     const current = getSnapshot()
-    setFavorites(current.filter((f) => f.id !== articleId))
+    writeFavorites(current.filter((f) => f.id !== articleId))
   }, [])
 
   const getFavorite = useCallback(
