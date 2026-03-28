@@ -1,12 +1,16 @@
-import { useCallback, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useSyncExternalStore } from 'react'
 import type { KanbanColumn } from '../types/kanban'
 import { DEFAULT_COLUMNS, COLUMNS_STORAGE_KEY } from '../types/kanban'
-import { loadJson, saveJson } from '../utils/storage'
+import { loadJson, saveJson, persistJson, restoreFromIdb } from '../utils/storage'
 
 type Listener = () => void
 
 let cache: KanbanColumn[] | null = null
 const listeners = new Set<Listener>()
+
+function notify(): void {
+  listeners.forEach((l) => l())
+}
 
 function getSnapshot(): KanbanColumn[] {
   if (cache === null) {
@@ -21,7 +25,7 @@ function subscribe(listener: Listener): () => void {
   const onStorage = (e: StorageEvent) => {
     if (e.key === COLUMNS_STORAGE_KEY) {
       cache = null
-      listeners.forEach((l) => l())
+      notify()
     }
   }
   window.addEventListener('storage', onStorage)
@@ -33,10 +37,10 @@ function subscribe(listener: Listener): () => void {
 }
 
 function writeColumns(next: KanbanColumn[]): void {
-  const ok = saveJson(COLUMNS_STORAGE_KEY, next)
-  if (ok) {
-    cache = next
-  }
+  saveJson(COLUMNS_STORAGE_KEY, next)
+  cache = next
+  notify()
+  persistJson(COLUMNS_STORAGE_KEY, next)
 }
 
 function updateColumns(updater: (prev: KanbanColumn[]) => KanbanColumn[]): void {
@@ -46,6 +50,23 @@ function updateColumns(updater: (prev: KanbanColumn[]) => KanbanColumn[]): void 
 
 export function useKanban() {
   const columns = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
+
+  // 起動時に IndexedDB から復元
+  useEffect(() => {
+    let cancelled = false
+    restoreFromIdb<KanbanColumn[]>(COLUMNS_STORAGE_KEY, DEFAULT_COLUMNS).then((restored) => {
+      if (cancelled) return
+      const current = getSnapshot()
+      const currentHasData = current.some((col) => col.articleIds.length > 0)
+      const restoredHasData = restored.some((col) => col.articleIds.length > 0)
+      if (!currentHasData && restoredHasData) {
+        cache = restored
+        saveJson(COLUMNS_STORAGE_KEY, restored)
+        notify()
+      }
+    })
+    return () => { cancelled = true }
+  }, [])
 
   const addArticleToBoard = useCallback(
     (articleId: string) => {
