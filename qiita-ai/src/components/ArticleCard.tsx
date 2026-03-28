@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react'
 import type { Article } from '../types/article'
 import { formatDate } from '../utils/date'
 
@@ -20,6 +21,14 @@ const SOURCE_BADGE: Record<Article['source'], { label: string; className: string
 
 export function ArticleCard({ article, isFavorite = false, onToggleFavorite }: Props) {
   const badge = SOURCE_BADGE[article.source]
+  const [copied, setCopied] = useState(false)
+
+  const handleCopyUrl = useCallback(() => {
+    navigator.clipboard.writeText(article.url).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }, [article.url])
 
   return (
     <article className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5 flex flex-col gap-3 hover:shadow-md transition-shadow">
@@ -79,6 +88,21 @@ export function ArticleCard({ article, isFavorite = false, onToggleFavorite }: P
               </svg>
             </button>
           )}
+          <button
+            onClick={handleCopyUrl}
+            aria-label="URLをコピー"
+            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            {copied ? (
+              <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+            )}
+          </button>
           <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
             <svg className="w-4 h-4 text-rose-400" fill="currentColor" viewBox="0 0 20 20">
               <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />

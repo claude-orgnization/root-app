@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { useFavorites } from '../hooks/useFavorites'
 import { useKanban } from '../hooks/useKanban'
 import { KanbanBoard } from '../components/KanbanBoard'
+import { ReadingStats } from '../components/ReadingStats'
 
 export function BoardPage() {
   const { favorites, removeFavorite } = useFavorites()
@@ -32,6 +33,8 @@ export function BoardPage() {
           {favorites.length} 件のお気に入り記事
         </p>
       </div>
+
+      <ReadingStats columns={columns} totalFavorites={favorites.length} />
 
       {favorites.length === 0 ? (
         <div className="text-center py-20">
