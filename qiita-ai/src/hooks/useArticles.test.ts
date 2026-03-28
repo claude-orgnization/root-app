@@ -24,6 +24,7 @@ const mockZennArticle: Article = {
 
 describe('useArticles', () => {
   beforeEach(() => {
+    localStorage.clear()
     vi.spyOn(qiitaApi, 'fetchQiitaArticles')
     vi.spyOn(zennApi, 'fetchZennArticles')
   })
